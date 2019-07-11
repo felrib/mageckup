@@ -1,9 +1,13 @@
 <?php
 
-$conf = require __DIR__ . '/config.php';
-$config = simplexml_load_file($conf['magento_root'].'/app/etc/local.xml');
+require __DIR__ . '/vendor/autoload.php';
 
-$maintenanceFile = $conf['magento_root'].'/maintenance.flag';
+$dotenv = \Dotenv\Dotenv::create(__DIR__);
+$dotenv->load();
+
+$config = simplexml_load_file(getenv('MAGENTO_ROOT').'/app/etc/local.xml');
+
+$maintenanceFile = getenv('MAGENTO_ROOT').'/maintenance.flag';
 
 if (!touch($maintenanceFile)) {
     die('impossible to create maintenance file');
@@ -94,14 +98,9 @@ execute("cd $backupDir && tar -czf $file.tgz $file.sql");
 // remove o .sql
 execute("rm $backupDir/$file.sql");
 
-symlink(realpath("$backupDir/$file.tgz"), $conf['magento_root']."/$file.tgz");
-
-$tag = (isset($conf['tag']) && $conf['tag']) ? $conf['tag'] : 'default';
-$baseUrl = $conf['base_url'];
-$url = urlencode($baseUrl."/$file.tgz");
-file_get_contents("http://159.89.38.249:8585/?tag=$tag&url=$url");
-sleep(60*15); // wait 15 minutes
+$s3 = new S3(getenv('KEY'), getenv('SECRET'));
+$file = "{$backupDir}/{$file}.tgz";
+$s3->putObject($s3->inputFile($file, false), getenv('BUCKET'), "{$file}.tgz");
 
 // removes backups
-unlink("$backupDir/$file.tgz");
-unlink($conf['magento_root']."/$file.tgz");
+unlink("{$backupDir}/{$file}.tgz");
