@@ -108,4 +108,4 @@ $s3->putObject(
     basename($file), S3::ACL_PRIVATE, [], [], 'GLACIER');
 
 // removes backups
-//unlink($file);
+unlink($file);
