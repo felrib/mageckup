@@ -99,8 +99,13 @@ execute("cd $backupDir && tar -czf $file.tgz $file.sql");
 execute("rm $backupDir/$file.sql");
 
 $s3 = new S3(getenv('KEY'), getenv('SECRET'));
+
 $file = "{$backupDir}/{$file}.tgz";
-$s3->putObject($s3->inputFile($file, false), getenv('BUCKET'), "{$file}.tgz");
+
+$s3->putObject(
+    $s3->inputFile($file, false),
+    getenv('BUCKET'),
+    basename($file), S3::ACL_PRIVATE, [], [], 'GLACIER');
 
 // removes backups
-unlink("{$backupDir}/{$file}.tgz");
+//unlink($file);
